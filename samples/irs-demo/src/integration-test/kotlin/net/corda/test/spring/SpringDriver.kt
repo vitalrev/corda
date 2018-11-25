@@ -75,7 +75,7 @@ data class SpringBootDriverDSL(private val driverDSL: DriverDSLImpl) : InternalD
 
     private fun startApplication(handle: NodeHandle, debugPort: Int?, clazz: Class<*>): Process {
         return ProcessUtilities.startJavaProcess(
-                className = clazz.canonicalName, // cannot directly get class for this, so just use string
+                entry = JavaEntry.ClassName(clazz.canonicalName),
                 jdwpPort = debugPort,
                 extraJvmArguments = listOf(
                         "-Dname=node-${handle.p2pAddress}-webserver",
@@ -83,7 +83,7 @@ data class SpringBootDriverDSL(private val driverDSL: DriverDSLImpl) : InternalD
                         // Inherit from parent process
                 ),
                 workingDirectory = handle.baseDirectory,
-                arguments = listOf(
+                appArguments = listOf(
                         "--base-directory", handle.baseDirectory.toString(),
                         "--server.port=${(handle as NodeHandleInternal).webAddress.port}",
                         "--corda.host=${handle.rpcAddress}",

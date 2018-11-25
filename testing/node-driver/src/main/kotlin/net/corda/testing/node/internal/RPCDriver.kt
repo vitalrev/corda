@@ -391,7 +391,10 @@ data class RPCDriverDSL(
             username: String = rpcTestUser.username,
             password: String = rpcTestUser.password
     ): CordaFuture<Process> {
-        val process = ProcessUtilities.startJavaProcess<RandomRpcUser>(listOf(rpcOpsClass.name, rpcAddress.toString(), username, password))
+        val process = ProcessUtilities.startJavaProcess(
+                JavaEntry.mainClass<RandomRpcUser>(),
+                listOf(rpcOpsClass.name, rpcAddress.toString(), username, password)
+        )
         driverDSL.shutdownManager.registerProcessShutdown(process)
         return doneFuture(process)
     }

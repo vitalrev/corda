@@ -25,6 +25,7 @@ import net.corda.node.services.Permissions.Companion.all
 import net.corda.testing.common.internal.checkNotOnClasspath
 import net.corda.testing.core.*
 import net.corda.testing.node.User
+import net.corda.testing.node.internal.JavaEntry
 import net.corda.testing.node.internal.NodeBasedTest
 import net.corda.testing.node.internal.ProcessUtilities
 import org.apache.activemq.artemis.api.core.ActiveMQSecurityException
@@ -229,13 +230,13 @@ class CordaRPCClientTest : NodeBasedTest(listOf("net.corda.finance")) {
     @Test
     fun `additional class loader used by WireTransaction when it deserialises its components`() {
         val financeLocation = Cash::class.java.location.toPath().toString()
-        val classPathWithoutFinance = ProcessUtilities.defaultClassPath.filter { financeLocation !in it }
+        val classPathWithoutFinance = JavaEntry.defaultClassPath.filter { financeLocation !in it }
 
         // Create a Cash.State object for the StandaloneCashRpcClient to get
         node.services.startFlow(CashIssueFlow(100.POUNDS, OpaqueBytes.of(1), identity), InvocationContext.shell()).flatMap { it.resultFuture }.getOrThrow()
-        val outOfProcessRpc = ProcessUtilities.startJavaProcess<StandaloneCashRpcClient>(
-                classPath = classPathWithoutFinance,
-                arguments = listOf(node.node.configuration.rpcOptions.address.toString(), financeLocation)
+        val outOfProcessRpc = ProcessUtilities.startJavaProcess(
+                entry = JavaEntry.mainClass<StandaloneCashRpcClient>(classPathWithoutFinance),
+                appArguments = listOf(node.node.configuration.rpcOptions.address.toString(), financeLocation)
         )
         assertThat(outOfProcessRpc.waitFor()).isZero()  // i.e. no exceptions were thrown
     }

@@ -11,13 +11,11 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class ProcessUtilitiesTests {
-
     @Rule
     @JvmField
     val tempFolder = TemporaryFolder()
 
     companion object {
-
         private val tmpString = ProcessUtilitiesTests::class.java.name
 
         @JvmStatic
@@ -29,7 +27,7 @@ class ProcessUtilitiesTests {
     @Test
     fun `test dummy process can be started`() {
         val tmpFile = tempFolder.newFile("${ProcessUtilitiesTests::class.java.simpleName}.txt")
-        val startedProcess = ProcessUtilities.startJavaProcess<ProcessUtilitiesTests>(listOf(tmpFile.absolutePath))
+        val startedProcess = ProcessUtilities.startJavaProcess(JavaEntry.mainClass<ProcessUtilitiesTests>(), listOf(tmpFile.absolutePath))
         assertTrue { startedProcess.waitFor(20, TimeUnit.SECONDS) }
         assertEquals(tmpString, tmpFile.toPath().readText())
     }

@@ -8,6 +8,7 @@ import net.corda.core.utilities.getOrThrow
 import net.corda.nodeapi.internal.persistence.DatabaseConfig
 import net.corda.testing.common.internal.relaxedThoroughness
 import net.corda.testing.internal.configureDatabase
+import net.corda.testing.node.internal.JavaEntry
 import net.corda.testing.node.internal.ProcessUtilities.startJavaProcess
 import org.junit.Rule
 import org.junit.Test
@@ -49,7 +50,7 @@ class AbstractNodeTests {
             val urls = (0 until 4).map { freshURL() }
             // Haven't been able to reproduce in a warm JVM:
             pool.fork {
-                assertEquals(0, startJavaProcess<ColdJVM>(urls).waitFor())
+                assertEquals(0, startJavaProcess(JavaEntry.mainClass<ColdJVM>(), urls).waitFor())
             }
         }.transpose().getOrThrow()
         pool.shutdown()

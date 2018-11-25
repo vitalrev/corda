@@ -5,21 +5,9 @@ import java.io.File
 import java.nio.file.Path
 
 object ProcessUtilities {
-    inline fun <reified C : Any> startJavaProcess(
-            arguments: List<String>,
-            classPath: List<String> = defaultClassPath,
-            workingDirectory: Path? = null,
-            jdwpPort: Int? = null,
-            extraJvmArguments: List<String> = emptyList(),
-            maximumHeapSize: String? = null
-    ): Process {
-        return startJavaProcess(C::class.java.name, arguments, classPath, workingDirectory, jdwpPort, extraJvmArguments, maximumHeapSize)
-    }
-
     fun startJavaProcess(
-            className: String,
-            arguments: List<String>,
-            classPath: List<String> = defaultClassPath,
+            entry: JavaEntry,
+            appArguments: List<String>,
             workingDirectory: Path? = null,
             jdwpPort: Int? = null,
             extraJvmArguments: List<String> = emptyList(),
@@ -31,21 +19,41 @@ object ProcessUtilities {
             if (maximumHeapSize != null) add("-Xmx$maximumHeapSize")
             add("-XX:+UseG1GC")
             addAll(extraJvmArguments)
-            add(className)
-            addAll(arguments)
+            when (entry) {
+                is JavaEntry.ClassName -> add(entry.className)
+                is JavaEntry.JarFile -> addAll(listOf("-jar", entry.jarFile.toAbsolutePath().toString()))
+            }
+            addAll(appArguments)
         }
         return ProcessBuilder(command).apply {
             inheritIO()
-            environment()["CLASSPATH"] = classPath.joinToString(File.pathSeparator)
+            if (entry is JavaEntry.ClassName) {
+                environment()["CLASSPATH"] = entry.classPath.joinToString(File.pathSeparator)
+            }
             if (workingDirectory != null) {
-                redirectError((workingDirectory / "$className.stderr.log").toFile())
-                redirectOutput((workingDirectory / "$className.stdout.log").toFile())
+                val prefix = when (entry) {
+                    is JavaEntry.ClassName -> entry.className
+                    is JavaEntry.JarFile -> entry.jarFile.fileName.toString()
+                }
+                redirectError((workingDirectory / "$prefix.stderr.log").toFile())
+                redirectOutput((workingDirectory / "$prefix.stdout.log").toFile())
                 directory(workingDirectory.toFile())
             }
         }.start()
     }
 
     private val javaPath = (System.getProperty("java.home") / "bin" / "java").toString()
+}
 
-    val defaultClassPath: List<String> = System.getProperty("java.class.path").split(File.pathSeparator)
+sealed class JavaEntry {
+    data class ClassName(val className: String, val classPath: List<String> = defaultClassPath) : JavaEntry()
+    data class JarFile(val jarFile: Path) : JavaEntry()
+
+    companion object {
+        val defaultClassPath: List<String> = System.getProperty("java.class.path").split(File.pathSeparator)
+
+        inline fun <reified C : Any> mainClass(classPath: List<String> = defaultClassPath): ClassName {
+            return ClassName(C::class.java.name, classPath)
+        }
+    }
 }
