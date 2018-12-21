@@ -49,7 +49,7 @@ class JarScanningCordappLoaderTest {
 
     @Test
     fun `isolated JAR contains a CorDapp with a contract and plugin`() {
-        val isolatedJAR = JarScanningCordappLoaderTest::class.java.getResource("isolated.jar")!!
+        val isolatedJAR = JarScanningCordappLoaderTest::class.java.getResource("/isolated.jar")
         val loader = JarScanningCordappLoader.fromJarUrls(listOf(isolatedJAR))
 
         assertThat(loader.cordapps).hasSize(1)
@@ -57,7 +57,7 @@ class JarScanningCordappLoaderTest {
         val actualCordapp = loader.cordapps.single()
         assertThat(actualCordapp.contractClassNames).isEqualTo(listOf(isolatedContractId))
         assertThat(actualCordapp.initiatedFlows.first().name).isEqualTo("net.corda.finance.contracts.isolated.IsolatedDummyFlow\$Acceptor")
-        assertThat(actualCordapp.rpcFlows).isEmpty()
+        assertThat(actualCordapp.rpcFlows.first().name).isEqualTo("net.corda.finance.contracts.isolated.IsolatedDummyFlow\$Initiator")
         assertThat(actualCordapp.schedulableFlows).isEmpty()
         assertThat(actualCordapp.services).isEmpty()
         assertThat(actualCordapp.serializationWhitelists).hasSize(1)
@@ -83,7 +83,7 @@ class JarScanningCordappLoaderTest {
     // being used internally. Later iterations will use a classloader per cordapp and this test can be retired.
     @Test
     fun `cordapp classloader can load cordapp classes`() {
-        val isolatedJAR = JarScanningCordappLoaderTest::class.java.getResource("isolated.jar")!!
+        val isolatedJAR = JarScanningCordappLoaderTest::class.java.getResource("/isolated.jar")
         val loader = JarScanningCordappLoader.fromJarUrls(listOf(isolatedJAR), VersionInfo.UNKNOWN)
 
         loader.appClassLoader.loadClass(isolatedContractId)
